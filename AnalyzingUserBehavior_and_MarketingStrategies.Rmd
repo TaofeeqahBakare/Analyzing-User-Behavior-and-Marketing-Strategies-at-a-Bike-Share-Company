@@ -1,0 +1,232 @@
+---
+title: "Maximizing Memberships: Analyzing User Behavior and Marketing Strategies at a Bike-Share Company"
+author: "Taofeeqah Bakare"
+---
+
+## Introduction
+
+Cyclistic is a bike-share company in Chicago that features more than 5,800 bicycles and 600 docking stations. Cyclistic sets itself apart by also offering reclining bikes, hand tricycles, and cargo bikes, making bike-share more inclusive to people with disabilities and riders who can’t use a standard two-wheeled bike. 
+
+The director of marketing believes the company’s future success depends on maximizing the number of annual memberships. Therefore, my team wants to understand how casual riders and annual members use Cyclistic bikes differently.
+
+The business task is to analyze Cyclistic historical bike trip data to identify trends and better understand how annual members and casual riders differ, why casual riders would buy a membership, and how digital media could affect their marketing tactics. The goal is to design marketing strategies aimed at converting casual riders into annual members and provide high-level recommendations for how these trends can help guide marketing strategy for the company with compelling data insights and professional data visualizations.
+
+## Dataset
+
+The team used Cyclistic’s 12-month historical trip data from October 2021 to September 2022 to analyze and identify trends. The datasets were extracted from [here](https://divvy-tripdata.s3.amazonaws.com/index.html).
+
+(Note: The datasets have a different name because Cyclistic is a fictional company but for the purposes of this case study, the datasets are appropriate and will help answer the business questions. The data has been made available by Motivate International Inc. under this [license](https://www.divvybikes.com/data-license-agreement).)
+
+## Libraries
+
+The following libraries are used for this case study:
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(readr)
+library(dplyr)
+library(janitor)
+library(stringr)
+```
+
+## Data Manipulation
+
+When we view the data we see that we have 16 variables opposed to 13 in the original data, this is because of the data manipulation done in Excel before importing the data into R. Calculations were done in Excel to create the ride_length column. Weekday and floor functions were used to calculate day_of_week and start_hour columns respectively so as to aid further analysis.
+
+## Data Cleaning
+
+Merge all the CSV files into one and name it df.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+# Import and merge all CSV files into one data frame
+df <- list.files(path = "/Users/user/Downloads/CASE_STUDY_1", pattern = "*.csv", full.names = TRUE) %>% 
+  lapply(read_csv) %>% 
+  bind_rows()
+```
+
+Use the glimpse function to view the column names and data types for all columns or variables in the data frame. With this function, we are also able to view the first few observations in the data frame. This data frame has 5,883,043 observations and there are 16 variables.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+glimpse(df)
+```
+
+To remove all rows having NA and all duplicates, use na.omit and distinct function.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+df <- na.omit(df)
+df <- distinct(df)
+glimpse(df)
+
+```
+
+All NA entries have been removed and we have 4,559,971 observations and 16 variables.
+
+Change the day_of_week column to weekdays instead of numeric values.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+df$day_of_week <- wday(df$day_of_week, label=TRUE)
+glimpse(df)
+```
+
+Export the cleaned dataset for visualization purpose in Tableau.
+
+```{r}
+write_csv(df,file = "dataframe.csv")
+```
+
+## Data Analysis
+
+The type of bike riden by casual riders or members is shown below.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+bike_riden <- df %>% 
+  group_by (member_casual, rideable_type) %>% 
+  summarise()
+bike_riden
+```
+
+Total count of each bike used by members.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+total_count <- df %>%
+  filter(grepl('member', member_casual)) %>%
+  count(rideable_type) %>% 
+  arrange(desc(n))
+
+total_count
+```
+
+Total count of each bike used by Casual riders.
+
+```{r}
+total_count <- df %>%
+  filter(grepl('casual', member_casual)) %>%
+  count(rideable_type) %>% 
+  arrange(desc(n))
+
+total_count
+```
+
+Use the count function to see what group rides bike most.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+ride_count <- df %>% 
+  count(member_casual)
+ride_count
+```
+
+Total time spent riding all bikes by each group.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+total <- df %>% 
+  group_by (member_casual) %>% 
+  summarise(ride_time = sum(ride_length)) %>% 
+  arrange(ride_time)
+total
+```
+
+What day of the week do casual riders ride the most?
+ 
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+casual_fav_day <- df %>%
+  filter(grepl('casual', member_casual)) %>%
+  count(day_of_week) %>% 
+  arrange(desc(n))
+
+casual_fav_day
+```
+
+What day of the week do members ride the most?
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+member_fav_day <- df %>%
+  filter(grepl('member', member_casual)) %>%
+  count(day_of_week) %>% 
+  arrange(desc(n))
+
+member_fav_day
+```
+
+What hour of the day do casual riders ride the most?
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+casual_fav_hour <- df %>%
+  filter(grepl('casual', member_casual)) %>%
+  count(start_hour) %>% 
+  arrange(desc(n))
+
+casual_fav_hour
+```
+
+What hour of the day do members ride the most?
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+member_fav_hour <- df %>%
+  filter(grepl('member', member_casual)) %>%
+  count(start_hour) %>% 
+  arrange(desc(n))
+
+member_fav_hour
+```
+
+Members most frequent starting point.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+member_fav_startpoint <- df %>%
+  filter(grepl('member', member_casual)) %>%
+  count(start_station_name) %>% 
+  arrange(desc(n))
+
+member_fav_startpoint
+```
+
+Casual riders most frequent starting point.
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+casual_fav_startpoint <- df %>%
+  filter(grepl('casual', member_casual)) %>%
+  count(start_station_name) %>% 
+  arrange(desc(n))
+
+casual_fav_startpoint
+```
+
+## Data Visualization
+
+Data Visualization was done with Tableau. Click [here](https://public.tableau.com/app/profile/taofeeqah.ifelade.bakare/viz/Google_Capstone_Project/Dashboard1) to view.
+
+## Key Findings
+
+The following was concluded from the analysis:
+
+1. Casual riders ride all types of bikes (classic bikes, electric bikes and docked bikes) while members ride only classic and electric bikes.
+
+2. Members generally ride bikes the most with a total of 2682098 riders while casual riders have a total of 1877873.
+
+3. Casual riders spend more time riding bikes with a difference of 825,261,040 seconds to Members' duration.
+
+4. Casual riders ride majorly on Saturdays and Sundays while Members ride majorly on weekdays.
+
+5. Both Members and Casual riders mostly start their rides around 5 pm.
+
+6. Both Members and Casual riders ride classic bikes most.
+
+7. Casual riders' favourite start point is Streeter Dr & Grand Ave with a significant difference from other start points.
+
+8. Members' favourite start point is Kingsbury St & Kinzie St.
+
+## Top three Recommendations
+
+1. Members should be given discounts on Saturday and Sunday rides. This will prompt casual riders to become members as most of their trips are on these days and it'll be an added advantage.
+
+2. Allow members to book reservations for 5 pm a day before, casual riders will want to become members as this is rush hour for everyone and making reservations will make things easier for them.
+
+3. Share flyers that state the advantage and discount that comes with being a Member around Casual riders' top 5 starting points.
+
+## Other Recommendations
+
+1. Since casual riders spend more time riding bikes, explain to them how they could save money if they become members and get an annual subscription.
+
+2. Paste banners that state the advantage and discount that comes with being a Member around Casual riders' favourite start point.
